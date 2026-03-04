@@ -1,0 +1,33 @@
+# =============================================================
+# BoldBI ETL Migration - YML Pipeline Template
+# =============================================================
+# Instructions:
+#   1. Copy this file and rename to: {database_name}_{schema}.yml
+#      Example: antenna_public.yml
+#   2. Replace all placeholder values marked with < >
+#   3. Upload to DataHub UI: Ingestion > Sources > Create > File Upload
+# =============================================================
+
+source:
+  type: postgres  # Change if using a different DB type (mysql, mssql, etc.)
+  config:
+    host_port: "<HOST>:<PORT>"
+    database: "<DATABASE_NAME>"
+    username: "<USERNAME>"
+    password: "<PASSWORD>"
+    schema_pattern:
+      allow:
+        - "<SCHEMA_NAME>"  # Usually "public" or "data_team"
+
+sink:
+  type: datahub-rest
+  config:
+    server: "<DATAHUB_URL>"
+
+transformers:
+  - type: simple_add_dataset_schema
+    config:
+      schema_pattern:
+        # Destination format: {source_db}_{source_schema}
+        # Example: antenna_public
+        replace: "<DATABASE_NAME>_<SCHEMA_NAME>"
