@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BoldBI DataHub Migration Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface-2: #232736;
+    --surface-3: #2c3044;
+    --border: #353a4f;
+    --text: #e2e4ed;
+    --text-dim: #8b8fa3;
+    --text-muted: #5c6078;
+    --accent: #6c9cff;
+    --accent-dim: #4a7ae0;
+    --green: #4ade80;
+    --green-dim: #166534;
+    --yellow: #fbbf24;
+    --yellow-dim: #92400e;
+    --red: #f87171;
+    --red-dim: #991b1b;
+    --orange: #fb923c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  .header h1 span { color: var(--accent); }
+  .header-stats {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── Layout ── */
+  .main { display: flex; min-height: calc(100vh - 65px); }
+  .left-panel {
+    width: 380px;
+    min-width: 380px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px;
+  }
+  .right-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 32px;
+  }
+
+  /* ── Form Controls ── */
+  .field { margin-bottom: 20px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+  select, input[type="text"] {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  select:focus, input:focus { border-color: var(--accent); }
+  select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b8fa3' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: var(--accent); color: #fff; width: 100%; justify-content: center; }
+  .btn-primary:hover { background: var(--accent-dim); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-copy {
+    background: var(--surface-3);
+    color: var(--text-dim);
+    padding: 6px 12px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+  }
+  .btn-copy:hover { color: var(--text); border-color: var(--text-dim); }
+  .btn-copy.copied { color: var(--green); border-color: var(--green); }
+
+  /* ── Info Box ── */
+  .info-box {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+  .info-box strong { color: var(--text); }
+
+  /* ── Query Display ── */
+  .query-section { margin-bottom: 28px; }
+  .query-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .query-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .query-label .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .label-original .dot { background: var(--orange); }
+  .label-migrated .dot { background: var(--green); }
+  .query-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .query-box pre {
+    padding: 18px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text);
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  /* ── Changes List ── */
+  .changes-section { margin-bottom: 28px; }
+  .changes-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+  .change-item {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 8px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .change-item .arrow { color: var(--accent); font-size: 14px; flex-shrink: 0; }
+  .change-item .old { color: var(--red); text-decoration: line-through; opacity: 0.7; }
+  .change-item .new { color: var(--green); }
+  .change-tag {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .tag-table { background: var(--yellow-dim); color: var(--yellow); }
+  .tag-column { background: #1e3a5f; color: var(--accent); }
+
+  /* ── Checklist ── */
+  .checklist { margin-top: 24px; }
+  .checklist-phase {
+    margin-bottom: 20px;
+  }
+  .phase-header {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .phase-prep { background: #1e293b; color: #93c5fd; }
+  .phase-copy { background: #1c2333; color: #a5b4fc; }
+  .phase-update { background: #162016; color: #86efac; }
+  .phase-validate { background: #2a1f0e; color: var(--yellow); }
+  .phase-apply { background: #1a1626; color: #c4b5fd; }
+  .phase-cleanup { background: #1f1517; color: #fca5a5; }
+
+  .check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .check-item:hover { background: var(--surface-2); }
+  .check-item input[type="checkbox"] {
+    margin-top: 3px;
+    accent-color: var(--green);
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  .check-item.checked span { color: var(--text-muted); text-decoration: line-through; }
+  .check-item .critical { color: var(--red); font-weight: 600; }
+
+  /* ── Progress Bar ── */
+  .progress-bar {
+    background: var(--surface-2);
+    border-radius: 20px;
+    height: 8px;
+    margin: 16px 0 24px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 20px;
+    transition: width 0.4s ease;
+  }
+  .progress-text {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 6px;
+  }
+
+  /* ── Empty State ── */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    color: var(--text-muted);
+    text-align: center;
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+  .empty-state p { font-size: 15px; max-width: 360px; line-height: 1.7; }
+
+  /* ── Warning ── */
+  .warning-banner {
+    background: var(--red-dim);
+    border: 1px solid #dc2626;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #fca5a5;
+    display: none;
+  }
+  .warning-banner.show { display: block; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border); }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .main { flex-direction: column; }
+    .left-panel { width: 100%; min-width: unset; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+
+  /* ── Datasource tabs ── */
+  .ds-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .ds-tab {
+    padding: 6px 14px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .ds-tab:hover { border-color: var(--text-dim); }
+  .ds-tab.active { background: var(--accent-dim); border-color: var(--accent); color: #fff; }
+  .ds-tab.migrated { border-color: var(--green); color: var(--green); }
+  .ds-tab.migrated::before { content: "✓ "; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span>DataHub</span> Migration Tool</h1>
+  <div class="header-stats" id="headerStats">Loading queries...</div>
+</div>
+
+<div class="main">
+  <!-- Left Panel -->
+  <div class="left-panel">
+    <div class="field">
+      <label>Category / Dashboard</label>
+      <select id="categorySelect">
+        <option value="">Select a category...</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Query / Datasource</label>
+      <select id="querySelect" disabled>
+        <option value="">Select a query...</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Database Name</label>
+      <input type="text" id="dbName" placeholder="e.g. antenna" />
+    </div>
+
+    <button class="btn btn-primary" id="migrateBtn" disabled>
+      Generate Migrated Query
+    </button>
+
+    <div class="warning-banner" id="warningBanner">
+      <strong>Warning:</strong> Never edit the original dashboard directly. Always create a TEST copy first!
+    </div>
+
+    <!-- Checklist -->
+    <div class="checklist" id="checklist" style="display:none;">
+      <div class="progress-text" id="progressText">0 / 20 steps completed</div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+      <div class="checklist-phase">
+        <div class="phase-header phase-prep">1. PREP</div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Open original dashboard in BoldBI. Confirm it loads.</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Note dashboard name and folder location.</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Count total widgets in the dashboard.</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Export data from 2-3 key widgets (screenshot or Excel).</span></div>
+      </div>
+
+      <div class="checklist-phase">
+        <div class="phase-header phase-copy">2. COPY</div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Click More Options > Save As.</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Name: "[ORIGINAL NAME] - TEST MIGRATION"</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Open TEST copy in edit mode.</span></div>
+      </div>
+
+      <div class="checklist-phase">
+        <div class="phase-header phase-update">3. UPDATE (test copy only)</div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Go to Data Sources panel (left side).</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span><span class="critical">BACKUP: Copy entire original query to a text file.</span></span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Paste the migrated query (from the right panel).</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Click Run / Preview. Confirm data appears.</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Save the datasource. Repeat for ALL datasources.</span></div>
+      </div>
+
+      <div class="checklist-phase">
+        <div class="phase-header phase-validate">4. VALIDATE</div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Save TEST dashboard. Exit edit mode. Reopen.</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Data loads without errors.</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Widget count matches original.</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Numbers match reference data (within 1% tolerance).</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>All filters and parameters work correctly.</span></div>
+      </div>
+
+      <div class="checklist-phase">
+        <div class="phase-header phase-apply">5. APPLY (only after validation)</div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Open ORIGINAL dashboard in edit mode.</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Copy each query from TEST to ORIGINAL. Save each.</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Save ORIGINAL dashboard. Test end-to-end.</span></div>
+      </div>
+
+      <div class="checklist-phase">
+        <div class="phase-header phase-cleanup">6. CLEANUP</div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Delete TEST MIGRATION copy.</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><span>Update migration tracker: mark as MIGRATED.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="right-panel" id="rightPanel">
+    <div class="empty-state" id="emptyState">
+      <div class="icon">&#9654;</div>
+      <p>Select a category, pick a query, enter the database name, and click <strong>Generate</strong> to see original vs. migrated SQL side by side.</p>
+    </div>
+    <div id="resultArea" style="display:none;"></div>
+  </div>
+</div>
+
+<script src="queries_data.js"></script>
+<script>
+// ── State ──
+let currentCategory = '';
+let currentQuery = null;
+let totalChecks = 0;
+let checkedCount = 0;
+
+// ── Init ──
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof QUERIES_DATA === 'undefined') {
+    document.getElementById('headerStats').textContent = 'ERROR: queries_data.js not found';
+    return;
+  }
+
+  const categories = Object.keys(QUERIES_DATA).sort();
+  let totalQ = 0;
+  categories.forEach(c => totalQ += QUERIES_DATA[c].length);
+  document.getElementById('headerStats').textContent = `${totalQ} queries | ${categories.length} categories`;
+
+  const catSelect = document.getElementById('categorySelect');
+  categories.forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat;
+    opt.textContent = `${cat} (${QUERIES_DATA[cat].length})`;
+    catSelect.appendChild(opt);
+  });
+
+  catSelect.addEventListener('change', onCategoryChange);
+  document.getElementById('querySelect').addEventListener('change', onQueryChange);
+  document.getElementById('migrateBtn').addEventListener('click', onMigrate);
+  document.getElementById('dbName').addEventListener('input', checkReady);
+
+  totalChecks = document.querySelectorAll('.check-item').length;
+});
+
+function onCategoryChange() {
+  const cat = document.getElementById('categorySelect').value;
+  const qSelect = document.getElementById('querySelect');
+  qSelect.innerHTML = '<option value="">Select a query...</option>';
+
+  if (!cat) {
+    qSelect.disabled = true;
+    checkReady();
+    return;
+  }
+
+  currentCategory = cat;
+  QUERIES_DATA[cat].forEach((q, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = q.filename;
+    qSelect.appendChild(opt);
+  });
+  qSelect.disabled = false;
+  checkReady();
+}
+
+function onQueryChange() {
+  const idx = document.getElementById('querySelect').value;
+  currentQuery = idx !== '' ? QUERIES_DATA[currentCategory][parseInt(idx)] : null;
+  checkReady();
+}
+
+function checkReady() {
+  const db = document.getElementById('dbName').value.trim();
+  const ready = currentQuery && db.length > 0;
+  document.getElementById('migrateBtn').disabled = !ready;
+}
+
+// ── Core Migration Logic ──
+function toSnakeCase(str) {
+  return str
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
+    .replace(/([a-z\d])([A-Z])/g, '$1_$2')
+    .toLowerCase();
+}
+
+function migrateQuery(sql, dbName) {
+  const changes = [];
+  let migrated = sql;
+
+  // 1. Table references: schema.table -> db_schema.table
+  const tablePattern = /(?<=(?:FROM|JOIN|INTO|UPDATE)\s+)([a-zA-Z_]\w*)\.([a-zA-Z_]\w*)/gi;
+  const tableMatches = [...sql.matchAll(tablePattern)];
+  const tableReplacements = new Map();
+
+  tableMatches.forEach(m => {
+    const oldRef = `${m[1]}.${m[2]}`;
+    const newRef = `${dbName}_${m[1]}.${m[2]}`;
+    if (!tableReplacements.has(oldRef)) {
+      tableReplacements.set(oldRef, newRef);
+      changes.push({ type: 'table', old: oldRef, new: newRef });
+    }
+  });
+
+  // Apply table replacements (longer first to avoid partial matches)
+  [...tableReplacements.entries()]
+    .sort((a, b) => b[0].length - a[0].length)
+    .forEach(([old, rep]) => {
+      migrated = migrated.split(old).join(rep);
+    });
+
+  // 2. Column names: camelCase -> snake_case
+  if (currentQuery && currentQuery.camel_columns) {
+    // Sort by length descending to avoid partial replacements
+    const cols = [...currentQuery.camel_columns].sort((a, b) => b.length - a.length);
+    cols.forEach(col => {
+      const snake = toSnakeCase(col);
+      if (col === snake) return;
+
+      // Replace in SELECT: add alias
+      // Match word boundary + optional table alias prefix
+      const selectRegex = new RegExp(
+        `(SELECT[\\s\\S]*?FROM)`,
+        'gi'
+      );
+
+      // First pass: gather columns that appear in SELECT
+      const selectMatch = migrated.match(/SELECT[\s\S]*?FROM/gi);
+      let inSelect = false;
+      if (selectMatch) {
+        selectMatch.forEach(block => {
+          if (block.match(new RegExp(`\\b${col}\\b`))) {
+            inSelect = true;
+          }
+        });
+      }
+
+      // Replace all occurrences with snake_case
+      const colRegex = new RegExp(`\\b(\\w+\\.)?${col}\\b(?!\\s*AS)`, 'g');
+      let hasChange = false;
+
+      migrated = migrated.replace(colRegex, (match, prefix) => {
+        hasChange = true;
+        const snakeCol = (prefix || '') + snake;
+        return snakeCol;
+      });
+
+      // Now add aliases in SELECT clause
+      if (inSelect && hasChange) {
+        // Find snake_case columns in SELECT that came from this camelCase and add alias
+        const aliasRegex = new RegExp(
+          `(SELECT[\\s\\S]*?)(\\b\\w*\\.?${snake}\\b)(?!\\s+AS)((?=[\\s,\\n]))`,
+          'gi'
+        );
+
+        // Simpler approach: find the column in SELECT portion and add alias
+        const parts = migrated.split(/\bFROM\b/i);
+        if (parts.length >= 2) {
+          const selectPart = parts[0];
+          const rest = parts.slice(1).join('FROM');
+          const colInSelect = new RegExp(`(\\w*\\.?${snake})(?!\\s+AS)\\b`, 'g');
+          const newSelect = selectPart.replace(colInSelect, `$1 AS "${col}"`);
+          migrated = newSelect + 'FROM' + rest;
+        }
+      }
+
+      if (hasChange) {
+        changes.push({ type: 'column', old: col, new: `${snake} AS "${col}"` });
+      }
+    });
+  }
+
+  return { migrated, changes };
+}
+
+// ── Render ──
+function onMigrate() {
+  const dbName = document.getElementById('dbName').value.trim();
+  if (!currentQuery || !dbName) return;
+
+  const { migrated, changes } = migrateQuery(currentQuery.sql, dbName);
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultArea').style.display = 'block';
+  document.getElementById('checklist').style.display = 'block';
+  document.getElementById('warningBanner').classList.add('show');
+
+  // Reset checklist
+  document.querySelectorAll('.check-item').forEach(item => {
+    item.classList.remove('checked');
+    item.querySelector('input').checked = false;
+  });
+  checkedCount = 0;
+  updateProgress();
+
+  let html = '';
+
+  // Original Query
+  html += `
+    <div class="query-section">
+      <div class="query-header">
+        <div class="query-label label-original"><span class="dot"></span>Original Query</div>
+        <button class="btn btn-copy" onclick="copyText(this, 'originalSql')">Copy</button>
+      </div>
+      <div class="query-box"><pre id="originalSql">${escapeHtml(currentQuery.sql)}</pre></div>
+    </div>
+  `;
+
+  // Migrated Query
+  html += `
+    <div class="query-section">
+      <div class="query-header">
+        <div class="query-label label-migrated"><span class="dot"></span>Migrated Query</div>
+        <button class="btn btn-copy" onclick="copyText(this, 'migratedSql')">Copy</button>
+      </div>
+      <div class="query-box"><pre id="migratedSql">${escapeHtml(migrated)}</pre></div>
+    </div>
+  `;
+
+  // Changes
+  if (changes.length > 0) {
+    html += `<div class="changes-section"><div class="changes-title">Changes Made (${changes.length})</div>`;
+    changes.forEach(c => {
+      const tag = c.type === 'table'
+        ? '<span class="change-tag tag-table">TABLE</span>'
+        : '<span class="change-tag tag-column">COLUMN</span>';
+      html += `
+        <div class="change-item">
+          ${tag}
+          <span class="old">${escapeHtml(c.old)}</span>
+          <span class="arrow">&rarr;</span>
+          <span class="new">${escapeHtml(c.new)}</span>
+        </div>
+      `;
+    });
+    html += '</div>';
+  } else {
+    html += `
+      <div class="info-box">
+        <strong>No changes detected.</strong> This query may already be compatible with DataHub,
+        or it may use column names that are already in snake_case.
+        Please verify manually in DataHub before applying.
+      </div>
+    `;
+  }
+
+  document.getElementById('resultArea').innerHTML = html;
+}
+
+// ── Utilities ──
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function copyText(btn, id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied');
+    btn.textContent = 'Copied!';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.textContent = 'Copy';
+    }, 2000);
+  });
+}
+
+function toggleCheck(item) {
+  const cb = item.querySelector('input');
+  cb.checked = !cb.checked;
+  item.classList.toggle('checked', cb.checked);
+  checkedCount = document.querySelectorAll('.check-item input:checked').length;
+  updateProgress();
+}
+
+function updateProgress() {
+  const pct = totalChecks > 0 ? Math.round((checkedCount / totalChecks) * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `${checkedCount} / ${totalChecks} steps completed`;
+}
+</script>
+</body>
+</html>
