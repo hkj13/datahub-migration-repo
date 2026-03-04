@@ -1,0 +1,31 @@
+# =============================================================
+# BoldBI ETL Migration - YML Pipeline
+# Database: generic | Schema: public
+# =============================================================
+# Instructions:
+#   1. Upload to DataHub UI: Ingestion > Sources > Create > File Upload
+#   2. Replace all placeholder values marked with < >
+#   3. Run the pipeline and verify tables are visible in DataHub
+# =============================================================
+
+source:
+  type: postgres
+  config:
+    host_port: "<HOST>:<PORT>"
+    database: "generic"
+    username: "<USERNAME>"
+    password: "<PASSWORD>"
+    schema_pattern:
+      allow:
+        - "public"
+
+sink:
+  type: datahub-rest
+  config:
+    server: "<DATAHUB_URL>"
+
+transformers:
+  - type: simple_add_dataset_schema
+    config:
+      schema_pattern:
+        replace: "generic_public"
